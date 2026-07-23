@@ -17,7 +17,7 @@
 
 ## 2. 수학적 배경 (Mathematical Background)
 
-### 📌 Newton-Raphson Method for Implied Volatility
+### Newton-Raphson Method for Implied Volatility
 블랙-숄즈 공식은 변동성 $\sigma$에 대한 역함수(Closed-form solution)가 존재하지 않으므로, 아래의 점화식을 통해 수치적으로 해를 구합니다.
 
 $$\sigma_{n+1} = \sigma_n - \frac{C_{BS}(\sigma_n) - C_{market}}{\text{Vega}(\sigma_n)}$$
@@ -33,7 +33,7 @@ $$\sigma_{n+1} = \sigma_n - \frac{C_{BS}(\sigma_n) - C_{market}}{\text{Vega}(\si
 
 학부 과정 및 실제 옵션 시장 조건의 문제 데이터를 기반으로 수치해석 엔진의 정상 작동 및 수렴 속도를 검증했습니다.
 
-### 🔍 검증 조건 (Test Inputs)
+### 검증 조건 (Test Inputs)
 * 현재 주가 ($S$): **7,800원**
 * 행사가격 ($K$): **8,000원**
 * 무위험 이자율 ($r$): **연 3.0%**
@@ -42,7 +42,7 @@ $$\sigma_{n+1} = \sigma_n - \frac{C_{BS}(\sigma_n) - C_{market}}{\text{Vega}(\si
 * 초기 추정 변동성 ($\sigma_0$): **30.0%**
 * 허용 오차 (`tol`): **$0.0001$ ($10^{-4}$)**
 
-### 📊 계산 결과 (Convergence Log)
+### 계산 결과 (Convergence Log)
 
 | Iteration | Sigma ($\sigma$) | BS Call Price | Error ($|C_{BS} - C_{market}|$) |
 | :---: | :---: | :---: | :---: |
@@ -54,7 +54,7 @@ $$\sigma_{n+1} = \sigma_n - \frac{C_{BS}(\sigma_n) - C_{market}}{\text{Vega}(\si
 
 ---
 
-## 🚀 실행 방법 (Usage)
+## 실행 방법 (Usage)
 
 ```bash
 # 저장소 복제 및 실행
