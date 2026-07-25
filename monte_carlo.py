@@ -1,4 +1,5 @@
 import numpy as np
+from black_scholes import BlackScholesModel
 
 class MonteCarloOption:
 
@@ -43,29 +44,51 @@ class MonteCarloOption:
         knock_in_prob = np.mean(knock_in) * 100.0
         return option_price, knock_in_prob
 
+    def price_european_call(self):
+      # 몬테카를로 방식 유러피안 콜옵션 가격
+
+      paths = self.generate_paths()
+      ST = paths[:, -1]
+      payoffs = np.maximum(ST - self.K, 0.0)
+      mc_price = np.exp(-self.r * self.T) * np.mean(payoffs)
+      return mc_price
+
+    def black_scholes_call(self):
+      # 블랙-숄즈 공식을 이용한 유러피안 콜옵션 이론적 정답
+
+        bs_model = BlackScholesModel(
+            S0=self.S0,
+            K=self.K,
+            T=self.T,
+            r=self.r,
+            sigma=self.sigma
+        )
+
+        return bs_model.call_price()
+
+    
+
 
 #--------------------------------------
 # Test Case
 #--------------------------------------
 
 if __name__ == "__main__":
-
     mc = MonteCarloOption(
-        S0=15500,
-        K=15000,
-        H=16000,
-        T_days=90,
-        r=0.025,
-        sigma=0.30,
-        n_simulations=10000,
-        seed=42
+        S0=15500, K=15000, H=16000, T_days=90, r=0.025, sigma=0.30, n_simulations=10000, seed=42
     )
 
-    price, prob = mc.price_up_and_in_option()
+    # 1. Up-and-In Barrier Option
+    ui_price, prob = mc.price_up_and_in_option()
 
-    print("=== Monte Carlo Up-and-In Barrier Call Option Engine ===")
-    print(f"Inputs: S0={mc.S0:,.0f}원 | K={mc.K:,.0f}원 | Barrier={mc.H:,.0f}원")
-    print(f"Params: T={mc.T_days}일 | r={mc.r*100}% | Vol={mc.sigma*100}% | Sims={mc.n_sims:,}회")
+    # 2. European Call Option (MC vs BS 비교)
+    mc_euro_price = mc.price_european_call()
+    bs_euro_price = mc.black_scholes_call()
+    error = abs(mc_euro_price - bs_euro_price) / bs_euro_price * 100
+
+    print("=== Monte Carlo Engine Validation ===")
+    print(f"Up-and-In Call 이론가 : {ui_price:,.2f} 원 (Knock-In 확률: {prob:.2f}%)")
     print("-" * 55)
-    print(f"Knock-In 달성 확률 : {prob:.2f}%")
-    print(f"Up-and-In Call 이론가 : {price:,.2f} 원")
+    print(f"European Call (Monte Carlo) : {mc_euro_price:,.2f} 원")
+    print(f"European Call (Black-Scholes): {bs_euro_price:,.2f} 원")
+    print(f"오차율 (Error Rate)          : {error:.3f}%")
