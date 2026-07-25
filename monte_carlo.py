@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from black_scholes import BlackScholesModel
 
@@ -68,27 +69,48 @@ class MonteCarloOption:
 
     
 
-
 #--------------------------------------
 # Test Case
 #--------------------------------------
 
 if __name__ == "__main__":
-    mc = MonteCarloOption(
-        S0=15500, K=15000, H=16000, T_days=90, r=0.025, sigma=0.30, n_simulations=10000, seed=42
+    # 시뮬레이션 횟수 테스트 리스트 (1,000회 ~ 200,000회)
+    sim_counts = [1000, 5000, 10000, 50000, 100000, 200000]
+
+    # 블랙-숄즈 이론가 기준점 계산
+    bs_model = BlackScholesModel(
+        S0=15500, K=15000, T=90 / 365.0, r=0.025, sigma=0.30
     )
+    bs_price = bs_model.price("call")
 
-    # 1. Up-and-In Barrier Option
-    ui_price, prob = mc.price_up_and_in_option()
+    print("=== 몬테카를로 수렴도 및 실행시간 분석 ===")
+    print(f"Black-Scholes 기준 정답 : {bs_price:,.2f} 원\n")
+    print(
+        f"{'Simulations (N)':>15} | {'Euro Call (MC)':>15} | {'오차율 (%)':>10} | {'Up-and-In Call':>15} | {'소요시간 (초)':>12}"
+    )
+    print("-" * 80)
 
-    # 2. European Call Option (MC vs BS 비교)
-    mc_euro_price = mc.price_european_call()
-    bs_euro_price = mc.black_scholes_call()
-    error = abs(mc_euro_price - bs_euro_price) / bs_euro_price * 100
+    for n_sim in sim_counts:
+        start_time = time.time()
 
-    print("=== Monte Carlo Engine Validation ===")
-    print(f"Up-and-In Call 이론가 : {ui_price:,.2f} 원 (Knock-In 확률: {prob:.2f}%)")
-    print("-" * 55)
-    print(f"European Call (Monte Carlo) : {mc_euro_price:,.2f} 원")
-    print(f"European Call (Black-Scholes): {bs_euro_price:,.2f} 원")
-    print(f"오차율 (Error Rate)          : {error:.3f}%")
+        # 시뮬레이션 실행 (동일 조건 비교를 위해 seed 고정)
+        mc = MonteCarloOption(
+            S0=15500,
+            K=15000,
+            H=16000,
+            T_days=90,
+            r=0.025,
+            sigma=0.30,
+            n_simulations=n_sim,
+            seed=42,
+        )
+
+        ui_price, _ = mc.price_up_and_in_option()
+        mc_euro_price = mc.price_european_call()
+
+        elapsed_time = time.time() - start_time
+        error_rate = abs(mc_euro_price - bs_price) / bs_price * 100
+
+        print(
+            f"{n_sim:>15,}회 | {mc_euro_price:>15,.2f}원 | {error_rate:>9.3f}% | {ui_price:>15,.2f}원 | {elapsed_time:>11.4f}s"
+        )
