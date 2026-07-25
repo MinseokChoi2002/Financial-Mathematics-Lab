@@ -64,7 +64,7 @@ class MonteCarloOption:
             sigma=self.sigma
         )
 
-        return bs_model.call_price()
+        return bs_model.price('call')
 
     
 
