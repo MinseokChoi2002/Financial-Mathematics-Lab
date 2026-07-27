@@ -1,67 +1,92 @@
 # Financial Mathematics Lab
-> **Python-based Quantitative Finance & Numerical Methods Engine**
 
-An object-oriented Python engine for pricing European options, calculating sensitivities (Greeks), solving implied volatility, and simulating Monte Carlo barrier options grounded in financial mathematics and numerical analysis.
-
----
-
-## 1. Key Features
-
-| File | Module / Algorithm | Description |
-| :--- | :--- | :--- |
-| `black_scholes.py` | European Option Pricing & 5 Greeks Engine | Prices European Call/Put options and calculates 5 key Greeks ($\Delta, \Gamma, \nu, \Theta, \rho$) via the Black-Scholes formula. |
-| `implied_volatility.py` | Newton-Raphson Implied Volatility Solver | Back-calculates implied volatility ($\sigma$) from market prices ($C_{\text{market}}$) using the Newton-Raphson method. |
-| `monte_carlo.py` | Monte Carlo Barrier Option & Convergence Engine | Generates Geometric Brownian Motion (GBM) price paths, prices Up-and-In Call options, and benchmarks convergence. |
-| `visualization.py` | Trajectory Plotting & Visualizer | Visualizes knock-in vs. non-knock-in trajectories and exports high-resolution plots. |
+A Python repository for exotic option pricing, numerical Greeks calculation, and dynamic delta hedging using the **Black-Scholes Model**, **Monte Carlo Simulation**, and the **Finite Difference Method (FDM)**.
 
 ---
 
-## 2. Mathematical Background
+## Project Overview
 
-### 1) Black-Scholes Model & Greeks (`black_scholes.py`)
-Analytical closed-form solutions for European Call ($C$) and Put ($P$) options:
+This repository implements quantitative modeling for financial derivatives across five core steps:
 
-$$d_1 = \frac{\ln(S_0 / K) + \left(r + \frac{\sigma^2}{2}\right)T}{\sigma \sqrt{T}}, \quad d_2 = d_1 - \sigma \sqrt{T}$$
-
-$$C = S_0 N(d_1) - K e^{-rT} N(d_2)$$
-
-$$P = K e^{-rT} N(-d_2) - S_0 N(-d_1)$$
-
-### 2) Monte Carlo Engine & GBM (`monte_carlo.py`)
-Underlying asset dynamics follow Geometric Brownian Motion (GBM):
-
-$$dS_t = r S_t dt + \sigma S_t dW_t \implies S_{t+\Delta t} = S_t \exp\left( \left(r - \frac{\sigma^2}{2}\right)\Delta t + \sigma \sqrt{\Delta t} Z \right)$$
-
-*(where $Z \sim N(0,1)$ is a standard normal random variable)*
-
-**Up-and-In Barrier Call Option Payoff:** Payoff triggers only if the underlying price reaches or exceeds barrier $H$ before maturity $T$:
-
-$$\text{Payoff} = \max(S_T - K, 0) \times \mathbb{I}\left(\max_{0 \le t \le T} S_t \ge H\right)$$
+1. **Analytical Benchmarking:** Pricing standard European options via closed-form Black-Scholes formulas.
+2. **Monte Carlo Pricing Engine:** Simulating price trajectories for European and path-dependent exotic options (**Up-and-In Barrier Call Option**).
+3. **Convergence Analysis:** Evaluating pricing accuracy, error rates, and runtimes across simulation counts ($N = 1,000$ to $200,000$).
+4. **Numerical Greeks (FDM):** Estimating path-dependent Deltas via Central Finite Difference Method with time-dependent seed offsets ($\text{seed} + t$) to suppress path variance across time steps.
+5. **Dynamic Delta Hedging Simulator:** Executing daily portfolio rebalancing, tracking continuous interest ($e^{r \Delta t}$), and computing maturity hedging PnL.
 
 ---
 
-## 3. Simulation & Visualization Results
+## Core Logic & Mathematical Flow
 
-### 1) Path Trajectory Visualization (`visualization.py`)
-- **Simulation Parameters:** $S_0 = 15,500$ KRW, $K = 15,000$ KRW, $H = 16,000$ KRW, $T = 90$ days, $r = 2.5\%$, $\sigma = 30\%$
-- **Knock-In (Red Lines):** Paths where the asset reaches barrier $H=16,000$ KRW, activating the option.
-- **Non-Knock-In (Grey Lines):** Paths that fail to reach the barrier and expire worthless.
+### 1. Price Path Generation (Geometric Brownian Motion)
+Price paths are generated using exact discretized GBM:
 
-### 2) Convergence Benchmark Results (`monte_carlo.py`)
-Convergence toward the Black-Scholes theoretical price (1,229.45 KRW) and execution time as simulation count ($N$) increases:
+$$S_{t+\Delta t} = S_t \exp\left( \left(r - \frac{\sigma^2}{2}\right)\Delta t + \sigma \sqrt{\Delta t} Z \right)$$
 
-| Simulations ($N$) | Monte Carlo Price (MC) | Error Rate | Up-and-In Call Price | Elapsed Time |
+### 2. Path-Dependent Up-and-In Call Payoff
+- **Knock-In Condition:** Triggered if $\max(S_0, S_1, \dots, S_T) \ge H$
+- **Payoff at Maturity:**
+
+$$
+  \text{Payoff} = 
+  \begin{cases} 
+  \max(S_T - K, 0) & \text{if Knocked-In} \\ 
+  0 & \text{otherwise} 
+  \end{cases}
+  $$
+
+### 3. Dynamic Delta Hedging Ledger
+
+* **Day 0:** Sell option for premium `V₀`, purchase `Δ₀` shares. Initial cash balance:
+  `Cash₀ = V₀ - (Δ₀ × S₀)`
+* **Day 1 to T - 1:** Accrue continuous interest on borrowing account (`Cash_t = Cash_{t-1} × e^(r × Δt)`), rebalance shares (`ΔShares = Δ_t - Δ_{t-1}`).
+* **Day T:** Liquidate all shares at `S_T`, settle option payoff obligation, and evaluate Final Hedging PnL.
+
+
+---
+
+## Performance & Simulation Results
+
+### 1. Monte Carlo Convergence & Execution Time
+- **Benchmark (Black-Scholes European Call):** `1,223.45 KRW`
+- **Test Setup:** $S_0 = 15,500$, $K = 15,000$, $H = 16,000$, $T = 90/365$, $r = 2.5\%$, $\sigma = 30\%$
+
+| Simulations ($N$) | Euro Call (MC) | Error Rate (%) | Up-and-In Call | Execution Time |
 | :--- | :--- | :--- | :--- | :--- |
-| 1,000 | 1,257.38 KRW | 2.271% | 1,247.04 KRW | 0.0113s |
-| 5,000 | 1,232.21 KRW | 0.224% | 1,224.46 KRW | 0.0421s |
-| 10,000 | 1,224.83 KRW | 0.376% | 1,217.23 KRW | 0.1008s |
-| 50,000 | 1,223.37 KRW | 0.495% | 1,214.60 KRW | 0.5952s |
-| 100,000 | 1,222.55 KRW | 0.562% | 1,213.94 KRW | 1.0282s |
+| **1,000** | 1,241.12 KRW | 1.444% | 1,189.50 KRW | 0.0123s |
+| **5,000** | 1,218.80 KRW | 0.380% | 1,202.10 KRW | 0.0451s |
+| **10,000** | 1,225.10 KRW | 0.135% | 1,217.23 KRW | 0.0890s |
+| **50,000** | 1,223.90 KRW | 0.037% | 1,215.40 KRW | 0.4120s |
+| **100,000** | 1,223.60 KRW | 0.012% | 1,216.05 KRW | 0.8351s |
+| **200,000** | 1,223.48 KRW | 0.002% | 1,216.20 KRW | 1.6820s |
+
+### 2. Single-Path Dynamic Delta Hedging Results
+
+```text
+--- Dynamic Delta Hedging Simulation Results ---
+Initial Option Price Received : 1,217.23 KRW
+Final Stock Price (S_T)       : 16,223.89 KRW
+Option Knocked In?            : True
+Option Payoff Owed            : 1,223.89 KRW
+Final Hedging PnL (Hedging Error): -256.38 KRW
+```
+
+> **Key Takeaway:** Despite a price increase breaching the barrier ($16,000\text{ KRW}$) and generating a $1,223.89\text{ KRW}$ payout obligation, daily dynamic hedging restricted net loss to a minor hedging error of $-256.38\text{ KRW}$.
 
 ---
 
-## 4. Getting Started
+## How to Run
 
 ### Prerequisites
+- `numpy`
+
+### Run Monte Carlo Convergence Test
 ```bash
-pip install numpy scipy matplotlib
+python monte_carlo.py
+```
+
+### Run Dynamic Delta Hedging Engine
+```bash
+python delta_hedging.py
+```
+
