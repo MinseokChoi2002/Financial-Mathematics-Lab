@@ -79,7 +79,7 @@ $$
 
 ### 3. Hedging Error (PnL) Distribution
 
-![Multi-Path Delta Hedging PnL Error Distribution](hedging_pnl_distribution.png)
+![Multi-Path Delta Hedging PnL Error Distribution](./01_Option_Pricing_and_Hedging/hedging_pnl_distribution.png)
 
 > **Key Takeaway:** The empirical PnL error distribution centers tightly around zero ($\text{Mean} = 38.08\text{ KRW}$), confirming that daily dynamic delta hedging effectively eliminates linear delta risk. The dispersion ($\text{Std} = 209.73\text{ KRW}$) reflects discrete rebalancing noise and short-gamma risks near the barrier.
 
